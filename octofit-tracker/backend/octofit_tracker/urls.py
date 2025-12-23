@@ -13,10 +13,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+import os
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+from rest_framework.decorators import api_view
 from . import views
+
 
 router = DefaultRouter()
 router.register(r'users', views.UserViewSet, basename='user')
@@ -25,8 +31,24 @@ router.register(r'activities', views.ActivityViewSet, basename='activity')
 router.register(r'workouts', views.WorkoutViewSet, basename='workout')
 router.register(r'leaderboards', views.LeaderboardViewSet, basename='leaderboard')
 
+CODESPACE_NAME = os.environ.get('CODESPACE_NAME')
+def get_api_url(component):
+    if CODESPACE_NAME:
+        return f"https://{CODESPACE_NAME}-8000.app.github.dev/api/{component}/"
+    return f"/api/{component}/"
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': get_api_url('users'),
+        'teams': get_api_url('teams'),
+        'activities': get_api_url('activities'),
+        'workouts': get_api_url('workouts'),
+        'leaderboards': get_api_url('leaderboards'),
+    })
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('', views.api_root, name='api-root'),
+    path('', api_root, name='api-root'),
 ]
